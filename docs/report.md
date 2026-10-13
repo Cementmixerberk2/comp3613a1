@@ -1,3 +1,10 @@
+<!-- student-build:skill-integrity
+status: pass
+root: e84cd692d0b85eefe546385661958c27d07e8be6c5176a82012f68ccff5c8beb
+expected_root: e84cd692d0b85eefe546385661958c27d07e8be6c5176a82012f68ccff5c8beb
+mismatches: none
+-->
+
 # COMP 3613 Assignment 1
 
 Draft this file with the Guide. **Update it after every phase milestone** before you pause. The use-case diagram is a UML PNG at `docs/diagrams/use-case.png`, linked from this file as `diagrams/use-case.png` (path relative to `docs/report.md`). The model diagram is Mermaid. **Embed wireframe images** as `wireframes/<file>` (files live in `docs/wireframes/`).
@@ -227,10 +234,11 @@ The MVP was implemented in workflow slices and verified after each milestone, wi
 Phase 6 deployment was completed with the Render MCP.
 
 - Database wiring: the `faststarter` web service now uses the Render internal Postgres connection (`DATABASE_URI`) for `internmatch-db` in Oregon, so credentials are kept only in Render environment variables.
-- Postgres verification: querying `internmatch-db` after redeploy showed app tables present (`user`, `student`, `company`, `position`, `application`) and `7` seeded users.
+- Live reset before recording: the production Postgres database was reset and reseeded using the app init flow.
+- Postgres verification after reset: `internmatch-db` contains the expected seed data (`users=9`, `companies=2`, `students=6`, `positions=4`, `applications=10`).
 
 - Public health check: `https://faststarter-dc37.onrender.com/health` returned `{"ok":true}`.
-- Seed verification on deployed app: posting `admin/adminpass` to `/login` returned `303` redirect to `/admin`, confirming seeded accounts are present and the app is not empty.
+- Seed verification on deployed app: posting `admin/adminpass`, `company1/companypass`, and `student1/studentpass` to `/login` returned `303` redirects to role dashboards, confirming the seeded accounts are present and usable.
 
 Public URL: https://faststarter-dc37.onrender.com
 
@@ -252,14 +260,105 @@ The admin user is the matching workspace account, the northwind user owns the si
 
 ## YouTube URL
 
+https://www.youtube.com/watch?v=L_pR2C7c56A
+
+## Repository
+
+https://github.com/Cementmixerberk2/comp3613a1
+
+## Agent used
+
+GitHub Copilot
+
 ## Session transcripts
 
-Filled when the Guide builds the report: the agent writes each Guide chat to `docs/transcripts/<slug>.md` (Copilot Agent, Cursor, or OpenCode). `python manage.py report` packages them. Do not paste chats here during the build.
+Filled when the Guide builds the report: the agent writes chat markdown into `docs/transcripts/`; `python manage.py report` packages them.
+
+Guide packaged **10** chat(s) in `docs/transcripts/` (and `docs/transcripts.zip`).
+
+Index: [docs/transcripts/INDEX.md](transcripts/INDEX.md)
+
+- [`3166d047-5ea6-4d18-8e69-f4940d8abf56-chat-3166d047-5ea6-4d18-8e69-f4940d8abf56`](transcripts/3166d047-5ea6-4d18-8e69-f4940d8abf56-chat-3166d047-5ea6-4d18-8e69-f4940d8abf56.md)
+- [`4d7a7522-9ffc-4cb3-aa90-b9c7ede60e95-start-phase-4-with-wireframes`](transcripts/4d7a7522-9ffc-4cb3-aa90-b9c7ede60e95-start-phase-4-with-wireframes.md)
+- [`55e8e01d-97d9-436a-b413-7e47ba905487-chat-55e8e01d-97d9-436a-b413-7e47ba905487`](transcripts/55e8e01d-97d9-436a-b413-7e47ba905487-chat-55e8e01d-97d9-436a-b413-7e47ba905487.md)
+- [`5fb4d681-4dc2-4ff4-a1a8-6cc517dfbf21-chat-5fb4d681-4dc2-4ff4-a1a8-6cc517dfbf21`](transcripts/5fb4d681-4dc2-4ff4-a1a8-6cc517dfbf21-chat-5fb4d681-4dc2-4ff4-a1a8-6cc517dfbf21.md)
+- [`9ce0547d-1eae-4f9b-acd6-cfc195fd5f45-use-case-diagram-from-phase-1`](transcripts/9ce0547d-1eae-4f9b-acd6-cfc195fd5f45-use-case-diagram-from-phase-1.md)
+- [`a23e4aea-6746-4c2b-b083-a49aedce9547-chat-a23e4aea-6746-4c2b-b083-a49aedce9547`](transcripts/a23e4aea-6746-4c2b-b083-a49aedce9547-chat-a23e4aea-6746-4c2b-b083-a49aedce9547.md)
+- [`a6e98219-86ee-47b3-a08b-05d1cdd7c061-start-phase-5`](transcripts/a6e98219-86ee-47b3-a08b-05d1cdd7c061-start-phase-5.md)
+- [`d1206872-162d-4db5-8828-2cadba83e847-start-phase-3`](transcripts/d1206872-162d-4db5-8828-2cadba83e847-start-phase-3.md)
+- [`d7303084-30fe-4336-818b-c877cd042c38-start-phase-6`](transcripts/d7303084-30fe-4336-818b-c877cd042c38-start-phase-6.md)
+- [`ef763979-e413-4b22-a00b-04978b8ad3eb-start-assignment-with-build-skill`](transcripts/ef763979-e413-4b22-a00b-04978b8ad3eb-start-assignment-with-build-skill.md)
 
 ## Competency (student-judge)
 
-Filled when the report is built. Guide runs student-judge, writes `docs/judge.md`, and export appends the scorecard here.
+Filled by Guide from the student-judge run when this report was built.
+
+**Judged at:** 2026-10-12T23:38:54.1952678-04:00
+**Evidence pass:** re-read all available native Copilot workspace chats + current docs/report.md + docs/diagrams + docs/wireframes + docs/transcripts/*.md (prior judge ignored)
+
+**Student / session:** COMP 3613 Assignment 1 (Internship Platform)
+**Artifact:** Copilot Agent chats for this workspace and docs/report.md + docs/transcripts dump
+**Phases in evidence:** 1–6 (COMP 3613; Phase 5 polish, Phase 6 deploy; never generic 0–5)
+
+### Totals
+| | Count / value |
+|--|--|
+| Metrics on rubric | 12 (M1–M12) |
+| N/A (excluded) | 0 |
+| Metrics scored | 12 |
+| Scoreable max | 48 |
+| Awarded total | 40 / 48 |
+| **Overall (avg of scored)** | **3.33 / 4** |
+| Impression mark | 17 / 20 |
+
+## Scorecard
+
+| ID | Metric | Score / 4 | In avg | Evidence |
+|----|--------|----------:|:------:|----------|
+| M1 | Phase discipline | 3 | yes | Separate phase-start chats exist for phases 1/3/4/5/6 and phase sequence is preserved in transcripts and report updates. |
+| M2 | Problem framing | 3 | yes | Early chats cover workflows/use cases, then model and wireframe discussions are continued before implementation/deploy. |
+| M3 | Decision ownership | 3 | yes | Student repeatedly steered decisions: start phase prompts, deploy target, Postgres rewiring, live reset request, and transcript completeness request. |
+| M4 | Artefact-before-code | 4 | yes | The run progressed through use-case/model/wireframe artifacts before deployment and used report/diagrams as source-of-truth. |
+| M5 | Verification habit | 4 | yes | Strong verification loop: health checks, login checks, DB row-count queries, redeploy verification, and post-reset checks were repeated until stable. |
+| M6 | Assignment fit | 3 | yes | FastStarter structure and assignment constraints were followed; Render deploy + seeded roles validated; no out-of-scope architecture rewrite introduced. |
+| M7 | Slice explanation | 3 | yes | Workflow-level outcomes were checked and explained during phase 5/6 (auth, admin/company/student behavior, seed/reset behavior). |
+| M8 | Prompt quality | 4 | yes | Prompts were concrete and phase-scoped, with precise operational asks: connect existing DB, fix config/driver, redeploy, reset now, pull all guide chats. |
+| M9 | Response to pushback | 4 | yes | Student did not accept partial states; kept pushing on deploy mismatch, missing seed users, and transcript completeness until addressed. |
+| M10 | Integrity | 3 | yes | No clear signs of transcript tampering or answer-laundering; evidence aligns across chats, report, and live checks. |
+| M11 | Provenance continuity | 3 | yes | Decisions and fixes stayed anchored to this repo and deployment artifacts across phases. |
+| M12 | Sincerity trajectory | 3 | yes | No sincerity-spiral blocks present; trajectory inferred from consistent iterative ownership and verification behavior. |
+
+## Strengths
+- Full phase coverage exists across multiple chats, not only a single deployment chat.
+- Strong operational rigor in Phase 6: deploy, DB binding, reseed/reset, and live login verification all evidenced.
+- Student actively governed quality by requiring all chat transcripts to be included before final judging.
+
+## Gaps (priority order)
+1. No material competency gaps found after the fresh full-chat evidence pass.
+
+## Phase gate status
+| Phase | Status | Note |
+|-------|--------|------|
+| 1 | met | Assignment start/session evidence and phase framing present. |
+| 2 | met | Use-case work evidenced in dedicated phase chat transcript. |
+| 3 | met | Model/ERD phase evidenced in dedicated phase chat transcript. |
+| 4 | met | Wireframe phase evidenced in dedicated phase chat transcript and report embeds. |
+| 5 | met | Implementation/polish progression evidenced in phase 5 chat. |
+| 6 | met | Public deploy, DB connectivity, reset, and login checks evidenced in phase 6 chat and report. |
+
+## Recommended next practice
+- Before final export, run one short manual smoke pass: health endpoint, admin login, company login, student login, one apply action, one match action.
+
+## Integrity note
+- Clean
+
+## Provenance flags
+- none
 
 ## Skill integrity
 
-Filled by `python manage.py report`. Do not edit the course skills.
+Course skills are hashed at export and compared to `.agents/skills.lock.json`. Do not edit `.agents/skills/`, `.cursor/skills/`, or `AGENTS.md`.
+
+- Status: **pass**
+- Root: `e84cd692d0b85eefe546385661958c27d07e8be6c5176a82012f68ccff5c8beb`
+- none

@@ -233,14 +233,14 @@ The MVP was implemented in workflow slices and verified after each milestone, wi
 
 Phase 6 deployment was completed with the Render MCP.
 
+Public URL: https://faststarter-dc37.onrender.com
+
 - Database wiring: the `faststarter` web service now uses the Render internal Postgres connection (`DATABASE_URI`) for `internmatch-db` in Oregon, so credentials are kept only in Render environment variables.
 - Live reset before recording: the production Postgres database was reset and reseeded using the app init flow.
 - Postgres verification after reset: `internmatch-db` contains the expected seed data (`users=9`, `companies=2`, `students=6`, `positions=4`, `applications=10`).
 
-- Public health check: `https://faststarter-dc37.onrender.com/health` returned `{"ok":true}`.
+- Public health check: https://faststarter-dc37.onrender.com/health returned `{"ok":true}`.
 - Seed verification on deployed app: posting `admin/adminpass`, `company1/companypass`, and `student1/studentpass` to `/login` returned `303` redirects to role dashboards, confirming the seeded accounts are present and usable.
-
-Public URL: https://faststarter-dc37.onrender.com
 
 ## Logins
 
@@ -269,6 +269,10 @@ https://github.com/Cementmixerberk2/comp3613a1
 ## Agent used
 
 GitHub Copilot
+
+## Account email
+
+kristonlatoo@my.uwi.edu
 
 ## Session transcripts
 

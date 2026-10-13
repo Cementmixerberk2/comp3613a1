@@ -227,12 +227,23 @@ def export_report(
             "No judge scorecard in the report yet. Ask the Guide to build the report "
             "(runs student-judge -> docs/judge.md), then re-run this command."
         )
-    app_url, logins, missing = _marker_access(markdown)
+    app_url, logins, extras, missing = _marker_access(markdown)
     dest.parent.mkdir(parents=True, exist_ok=True)
 
     pdf = _new_pdf(bool(missing))
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
-        cover = _cover_html(clean_name, clean_id, app_url, logins, integrity, missing)
+        cover = _cover_html(
+            clean_name,
+            clean_id,
+            app_url,
+            logins,
+            integrity,
+            missing,
+            github_url=extras["github_url"],
+            youtube_url=extras["youtube_url"],
+            agent_used=extras["agent_used"],
+            account_email=extras["account_email"],
+        )
         body = _markdown_to_html(markdown, src.parent, Path(tmp))
         appendix = _markdown_to_html(
             appendix_markdown(transcripts),
@@ -584,6 +595,11 @@ def _cover_html(
     logins: str,
     integrity: IntegrityResult,
     missing: list[str],
+    *,
+    github_url: str,
+    youtube_url: str,
+    agent_used: str,
+    account_email: str,
 ) -> str:
     login_html = " · ".join(
         html_lib.escape(line.strip()) for line in logins.splitlines() if line.strip()
@@ -596,6 +612,10 @@ def _cover_html(
         ("Student name", html_lib.escape(name), False),
         ("Student ID", html_lib.escape(student_id), False),
         ("Deployed app", html_lib.escape(app_url), False),
+        ("GitHub", html_lib.escape(github_url), False),
+        ("YouTube URL", html_lib.escape(youtube_url), False),
+        ("Agent used", html_lib.escape(agent_used), False),
+        ("Account email", html_lib.escape(account_email), False),
         ("Logins", login_html, False),
         ("Skill integrity", integrity_value, not integrity.ok),
     ]
@@ -649,7 +669,20 @@ def _section(markdown: str, *titles: str) -> str:
     return "\n".join(lines).strip()
 
 
-def _marker_access(markdown: str) -> tuple[str, str, list[str]]:
+def _first_url(text: str) -> str:
+    urls = re.findall(r"https?://[^\s)]+", text)
+    return urls[0] if urls else ""
+
+
+def _first_nonempty_line(text: str) -> str:
+    for line in text.splitlines():
+        cleaned = re.sub(r"^[-*]\s+", "", line.strip())
+        if cleaned:
+            return cleaned
+    return ""
+
+
+def _marker_access(markdown: str) -> tuple[str, str, dict[str, str], list[str]]:
     missing: list[str] = []
     deployed = _section(markdown, "deployed app", "deployed app link", "deploy url")
     urls = re.findall(r"https?://[^\s)]+", deployed)
@@ -657,6 +690,19 @@ def _marker_access(markdown: str) -> tuple[str, str, list[str]]:
     if not app_url:
         app_url = "Not yet"
         missing.append("public Render URL")
+
+    github_section = _section(markdown, "repository", "github", "github url")
+    github_url = _first_url(github_section) or "Not yet"
+
+    youtube_section = _section(markdown, "youtube url", "youtube", "video url")
+    youtube_url = _first_url(youtube_section) or "Not yet"
+
+    agent_section = _section(markdown, "agent used", "agent")
+    agent_used = _first_nonempty_line(agent_section) or "Not yet"
+
+    email_section = _section(markdown, "account email", "email", "student email")
+    email_match = re.search(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", email_section)
+    account_email = email_match.group(0) if email_match else "Not yet"
 
     logins = _section(markdown, "logins", "user logins")
     login_lines: list[str] = []
@@ -667,6 +713,7 @@ def _marker_access(markdown: str) -> tuple[str, str, list[str]]:
             and not cleaned.startswith("Markers ")
             and not cleaned.startswith("Every ")
             and not cleaned.startswith("Starter ")
+            and re.search(r"\S+\s*/\s*\S+", cleaned)
         ):
             login_lines.append(cleaned)
     if len(login_lines) < 2:
@@ -674,7 +721,13 @@ def _marker_access(markdown: str) -> tuple[str, str, list[str]]:
         missing.append("marker logins (at least two accounts)")
     else:
         login_text = "\n".join(login_lines)
-    return app_url, login_text, missing
+    extras = {
+        "github_url": github_url,
+        "youtube_url": youtube_url,
+        "agent_used": agent_used,
+        "account_email": account_email,
+    }
+    return app_url, login_text, extras, missing
 
 
 def _markdown_to_html(markdown: str, base: Path, tmp: Path) -> str:

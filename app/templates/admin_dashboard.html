@@ -1,0 +1,286 @@
+{% extends "authenticated-base.html" %}
+{% block title %}InternMatch | Admin Matching{% endblock %}
+
+{% block content %}
+<div class="admin-message-banner">
+  {% for message in messages %}
+  <div class="alert alert-{{ message.type }} admin-banner-alert" role="alert">{{ message.message }}</div>
+  {% endfor %}
+  {% for message in get_flashed_messages(request) %}
+  <div class="alert alert-{{ message.type }} admin-banner-alert" role="alert">{{ message.message }}</div>
+  {% endfor %}
+</div>
+
+<div class="company-shell admin-matching-shell">
+  <nav class="company-topbar">
+    <div class="company-brand">InternMatch</div>
+    <div class="company-tabs">
+      <a class="company-tab active" href="{{ url_for('admin_home_view') }}">Matching Workspace</a>
+    </div>
+    <a class="company-logout" href="{{ url_for('logout') }}">Logout</a>
+  </nav>
+
+  <div class="company-content admin-matching-grid">
+    <section class="section-card admin-positions-panel">
+      <div class="section-header">
+        <h2>Open Positions</h2>
+      </div>
+
+      {% if positions %}
+      <div class="admin-position-list">
+        {% for position in positions %}
+        <a class="admin-position-card {% if selected_position and position.id == selected_position.id %}selected{% endif %}" href="{{ url_for('admin_home_view') }}?position_id={{ position.id }}">
+          <div class="admin-position-head">
+            <h3>{{ position.title }}</h3>
+            <span class="slot-badge">{{ position.available_slots }} / {{ position.total_slots }}</span>
+          </div>
+          <p>{{ position.description }}</p>
+          <div class="slot-meter">
+            <span style="width: {{ ((position.available_slots / position.total_slots) * 100) if position.total_slots else 0 }}%;"></span>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="placeholder-text">There are no positions to match yet.</p>
+      {% endif %}
+    </section>
+
+    <section class="section-card admin-applications-panel">
+      <div class="section-header">
+        <h2>{{ selected_position.title if selected_position else 'Applications' }}</h2>
+      </div>
+
+      {% if application_rows %}
+      <div class="application-list">
+        {% for row in application_rows %}
+        {% set app = row.application %}
+        {% set student = row.student %}
+        {% set position = row.position %}
+        {% set matched = app.status == 'Matched' %}
+        {% set already_matched = row.already_matched %}
+        <div class="application-card {% if matched %}matched{% elif already_matched %}blocked{% endif %}">
+          <div class="application-header">
+            <div>
+              <h3>{{ student.full_name if student else 'Unknown student' }}</h3>
+              <p class="student-meta">{{ student.major if student else 'Unknown major' }} • GPA {{ '%.2f'|format(student.gpa) if student else '0.00' }}</p>
+            </div>
+            <span class="status-pill {% if matched %}matched{% elif already_matched %}submitted{% else %}available{% endif %}">
+              {% if matched %}Matched{% elif already_matched %}Already matched{% else %}Pending{% endif %}
+            </span>
+          </div>
+
+          <div class="application-details">
+            <div class="detail-row">
+              <span class="label">Position</span>
+              <strong>{{ position.title if position else 'Unknown position' }}</strong>
+            </div>
+            <div class="detail-row">
+              <span class="label">Remaining slots</span>
+              <strong>{{ position.available_slots if position else 0 }} / {{ position.total_slots if position else 0 }}</strong>
+            </div>
+            <div class="detail-row full-width">
+              <span class="label">Cover note</span>
+              <p>{{ app.cover_note or 'No cover note provided.' }}</p>
+            </div>
+          </div>
+
+          {% if matched %}
+          <button class="primary-btn disabled" type="button" disabled>Matched</button>
+          {% elif already_matched %}
+          <button class="primary-btn disabled" type="button" disabled>Already matched</button>
+          {% elif position and position.available_slots <= 0 %}
+          <button class="primary-btn disabled" type="button" disabled>Full</button>
+          {% else %}
+          <form method="POST" action="{{ url_for('match_application_action', application_id=app.id) }}">
+            <button class="primary-btn" type="submit">Assign student</button>
+          </form>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="placeholder-text">No applications have been submitted yet for this position.</p>
+      {% endif %}
+    </section>
+  </div>
+</div>
+
+<style>
+  .admin-message-banner {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    width: 100%;
+    background: rgba(17, 36, 54, 0.96);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 10px 24px rgba(16, 38, 61, 0.12);
+  }
+
+  .admin-banner-alert {
+    margin: 0;
+    border-radius: 0;
+    border: none;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .admin-matching-shell {
+    padding: 1.5rem;
+  }
+
+  .admin-matching-grid {
+    display: grid;
+    grid-template-columns: minmax(260px, 0.95fr) minmax(0, 1.65fr);
+    gap: 1.25rem;
+    align-items: start;
+  }
+
+  .admin-positions-panel,
+  .admin-applications-panel {
+    background: rgba(255,255,255,0.82);
+    border: 1px solid rgba(16, 38, 61, 0.08);
+    border-radius: 1rem;
+    box-shadow: 0 12px 28px rgba(16, 38, 61, 0.05);
+    padding: 1.25rem;
+  }
+
+  .admin-position-list,
+  .application-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .admin-position-card,
+  .application-card {
+    background: #f7f8fa;
+    border: 1px solid rgba(16,38,61,0.08);
+    border-radius: 0.9rem;
+    padding: 1rem;
+  }
+
+  .admin-position-card {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+
+  .admin-position-card:hover,
+  .admin-position-card.selected {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(16, 38, 61, 0.08);
+    border-color: rgba(212, 166, 74, 0.6);
+    text-decoration: none;
+  }
+
+  .admin-position-head,
+  .application-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .admin-position-head h3,
+  .application-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--brand-ink);
+  }
+
+  .slot-badge {
+    background: rgba(212, 166, 74, 0.14);
+    border: 1px solid rgba(212, 166, 74, 0.6);
+    color: var(--brand-primary);
+    border-radius: 999px;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .admin-position-card p,
+  .application-card p {
+    margin-top: 0.7rem;
+    color: var(--brand-muted);
+    line-height: 1.5;
+  }
+
+  .slot-meter {
+    width: 100%;
+    height: 0.6rem;
+    background: rgba(16, 38, 61, 0.08);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-top: 0.8rem;
+  }
+
+  .slot-meter span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--brand-primary), var(--brand-accent));
+  }
+
+  .student-meta {
+    margin-top: 0.2rem;
+    font-size: 0.85rem;
+    color: var(--brand-muted);
+  }
+
+  .application-details {
+    margin-top: 0.9rem;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.7rem 1rem;
+  }
+
+  .detail-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .detail-row.full-width {
+    grid-column: 1 / -1;
+  }
+
+  .detail-row .label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--brand-muted);
+    font-weight: 700;
+  }
+
+  .detail-row strong {
+    color: var(--brand-ink);
+  }
+
+  .application-card.matched {
+    border-color: rgba(212, 166, 74, 0.45);
+    background: rgba(212, 166, 74, 0.05);
+  }
+
+  .application-card.blocked {
+    opacity: 0.8;
+  }
+
+  .primary-btn.disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  @media (max-width: 980px) {
+    .admin-matching-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}

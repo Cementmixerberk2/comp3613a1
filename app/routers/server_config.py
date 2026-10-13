@@ -376,15 +376,13 @@ def _seed_demo_users() -> tuple[int, int]:
     from app.schemas.user import AdminCreate, RegularUserCreate
     from app.utilities.security import encrypt_password
 
-    demo_users = [
-        ("bob", "bob@example.com", "bobpass", "regular_user"),
-        ("admin", "admin@example.com", "adminpass", "admin"),
-    ]
+    from app.seed_data import SEED_USERS
+
     created = 0
     skipped = 0
     with get_cli_session() as session:
         repo = UserRepository(session)
-        for username, email, password, role in demo_users:
+        for username, email, password, role in SEED_USERS:
             if repo.get_by_username(username):
                 skipped += 1
                 continue

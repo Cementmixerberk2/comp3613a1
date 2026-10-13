@@ -90,10 +90,15 @@ Creates tables (drops existing by default) **and seeds demo users**:
 python manage.py init
 ```
 
-| Username | Password    | Role         |
-|----------|-------------|--------------|
-| `bob`    | `bobpass`   | regular_user |
-| `admin`  | `adminpass` | admin        |
+| Username | Password | Role |
+|----------|----------|------|
+| `admin` | `adminpass` | admin |
+| `northwind` | `companypass` | company |
+| `ava_thompson` | `studentpass` | student |
+| `leo_martinez` | `studentpass` | student |
+| `mia_ross` | `studentpass` | student |
+| `noah_chen` | `studentpass` | student |
+| `sophia_nguyen` | `studentpass` | student |
 
 Flags:
 

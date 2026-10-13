@@ -1,0 +1,38 @@
+@startuml
+!pragma layout smetana
+skinparam shadowing false
+skinparam actorBorderColor #1B365D
+skinparam actorFontColor #1E232D
+skinparam usecaseBackgroundColor #FFFFFF
+skinparam usecaseBorderColor #1B365D
+skinparam usecaseFontColor #1E232D
+skinparam rectangleBorderColor #1B365D
+skinparam rectangleBackgroundColor #F8FAFC
+skinparam arrowColor #1B365D
+
+actor "Company" as Company
+actor "Student" as Student
+
+rectangle "Internship Platform" {
+  usecase "Post Internship Position" as Post_Internship_Position
+  usecase "View Assigned Interns" as View_Assigned_Interns
+  usecase "Apply for Internship" as Apply_for_Internship
+  usecase "View Application Status" as View_Application_Status
+  usecase "Match Applications" as Match_Applications
+  usecase "Browse Open Positions" as Browse_Open_Positions
+  usecase "Add Cover Note" as Add_Cover_Note
+  usecase "View All Applications & Positions" as View_All_Applications_Positions
+}
+
+actor "Admin" as Admin
+
+Company --> Post_Internship_Position
+Company --> View_Assigned_Interns
+Student --> Apply_for_Internship
+Apply_for_Internship ..> Browse_Open_Positions : <<include>>
+Student --> View_Application_Status
+Match_Applications <-- Admin
+Match_Applications ..> View_All_Applications_Positions : <<include>>
+Add_Cover_Note ..> Apply_for_Internship : <<extend>>
+
+@enduml

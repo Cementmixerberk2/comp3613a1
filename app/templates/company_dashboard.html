@@ -1,0 +1,110 @@
+{% extends "authenticated-base.html" %}
+{% block title %}InternMatch | Company Dashboard{% endblock %}
+
+{% block content %}
+<div class="company-shell">
+  <nav class="company-topbar">
+    <div class="company-brand">InternMatch</div>
+    <div class="company-tabs">
+      <a class="company-tab {{ 'active' if selected_tab == 'post' else '' }}" href="{{ request.url_for('company_home_view') }}?tab=post">Post Position</a>
+      <a class="company-tab {{ 'active' if selected_tab == 'interns' else '' }}" href="{{ request.url_for('company_home_view') }}?tab=interns">Assigned Interns</a>
+    </div>
+    <a class="company-logout" href="{{ url_for('logout') }}">Logout</a>
+  </nav>
+
+  <div class="company-content">
+    <div class="row">
+      <div class="col-12">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.type }}" role="alert">{{ message.message }}</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="container-fluid workflow-shell">
+      {% if selected_tab == 'interns' %}
+      <section class="section-card">
+        <div class="section-header">
+          <h2>Assigned Interns</h2>
+        </div>
+
+        {% if assigned_by_position %}
+        <div class="list-stack">
+          {% for item in assigned_by_position %}
+          <article class="list-item">
+            <div class="list-item-head">
+              <h3>{{ item.position.title }}</h3>
+              <span class="badge">{{ item.filled }} / {{ item.position.total_slots }} filled</span>
+            </div>
+
+            {% if item.students %}
+            <ul class="student-list">
+              {% for match in item.students %}
+              <li>
+                <strong>{{ match.student.full_name }}</strong>
+                <span>• {{ match.student.major }}</span>
+              </li>
+              {% endfor %}
+            </ul>
+            {% else %}
+            <p class="placeholder-text">No interns assigned.</p>
+            {% endif %}
+          </article>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="placeholder-text">No positions posted yet.</p>
+        {% endif %}
+      </section>
+      {% else %}
+      <section class="section-card">
+        <div class="section-header">
+          <h2>Post Position</h2>
+        </div>
+        <form method="POST" action="{{ url_for('create_position_action') }}" class="stacked-form">
+          <div class="form-group">
+            <label for="title">Title</label>
+            <input id="title" name="title" type="text" required pattern=".*\S.*" title="Please enter a title with visible text.">
+          </div>
+          <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" name="description" rows="4" required pattern=".*\S.*" title="Please enter a short description with visible text."></textarea>
+          </div>
+          <div class="form-group">
+            <label for="total_slots">Total Slots</label>
+            <input id="total_slots" name="total_slots" type="number" min="1" value="1" required>
+          </div>
+          <button class="primary-btn" type="submit">Submit</button>
+        </form>
+      </section>
+
+      <section class="section-card" style="margin-top: 1.5rem;">
+        <div class="section-header">
+          <h2>My Positions</h2>
+        </div>
+        {% if positions %}
+        <div class="list-stack">
+          {% for position in positions %}
+          <article class="list-item{% if loop.first %} newest{% endif %}">
+            <div class="list-item-head">
+              <h3>{{ position.title }}</h3>
+              {% if loop.first %}
+              <span class="badge">Just posted</span>
+              {% endif %}
+            </div>
+            <p>{{ position.description }}</p>
+            <div class="meta-row">
+              <span>Available slots: {{ position.available_slots }} / {{ position.total_slots }}</span>
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="placeholder-text">No positions posted yet.</p>
+        {% endif %}
+      </section>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

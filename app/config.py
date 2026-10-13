@@ -108,6 +108,20 @@ class Settings(BaseSettings):
     db_pool_timeout: int = 10
     db_pool_recycle: int = 10
 
+    @field_validator("database_uri", mode="before")
+    @classmethod
+    def resolve_sqlite_database_path(cls, value: object) -> object:
+        if not isinstance(value, str):
+            return value
+        if value.startswith("sqlite:///") and not value.startswith("sqlite:////"):
+            relative_path = value.removeprefix("sqlite:///")
+            if not relative_path:
+                return value
+            root_dir = Path(__file__).resolve().parent.parent
+            absolute_path = (root_dir / relative_path).resolve()
+            return f"sqlite:///{absolute_path.as_posix()}"
+        return value
+
     @field_validator("app_port", mode="before")
     @classmethod
     def port_from_render(cls, value: object) -> object:

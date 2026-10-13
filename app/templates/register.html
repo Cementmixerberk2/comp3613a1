@@ -1,14 +1,14 @@
 {% extends "base.html" %}
-{% block title %}Register{% endblock %}
+{% block title %}InternMatch | Register{% endblock %}
 
 {% block content %}
 <div class="auth-shell">
   <div class="auth-panel">
     <a class="auth-back" href="{{ url_for('index_view') }}">← Home</a>
-    <div class="brand-wordmark">FastStarter</div>
+    <div class="brand-wordmark">InternMatch</div>
     <p class="auth-tagline">Create an account</p>
 
-    <form method="POST" action="{{ url_for('register_view') }}">
+    <form method="POST" action="{{ url_for('register_action') }}">
       <div class="mb-3">
         <label class="form-label" for="username">Username</label>
         <input class="form-control" type="text" id="username" name="username" required autofocus>
@@ -20,6 +20,13 @@
       <div class="mb-3">
         <label class="form-label" for="password">Password</label>
         <input class="form-control" type="password" id="password" name="password" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label" for="role">Account type</label>
+        <select class="form-select" id="role" name="role">
+          <option value="student" selected>Student</option>
+          <option value="company">Company</option>
+        </select>
       </div>
       <div class="d-grid gap-2 mb-3">
         <button class="btn btn-primary btn-lg" type="submit">Register</button>

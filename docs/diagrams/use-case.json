@@ -1,0 +1,49 @@
+{
+  "system": "Internship Platform",
+  "actors": [
+    { "name": "Company", "side": "left" },
+    { "name": "Student", "side": "left" },
+    { "name": "Admin", "side": "right" }
+  ],
+  "use_cases": [
+    {
+      "name": "Post Internship Position",
+      "actors": ["Company"]
+    },
+    {
+      "name": "View Assigned Interns",
+      "actors": ["Company"]
+    },
+    {
+      "name": "Apply for Internship",
+      "actors": ["Student"],
+      "includes": ["Browse Open Positions"]
+    },
+    {
+      "name": "View Application Status",
+      "actors": ["Student"]
+    },
+    {
+      "name": "Match Applications",
+      "actors": ["Admin"],
+      "includes": ["View All Applications & Positions"]
+    },
+    {
+      "name": "Browse Open Positions"
+    },
+    {
+      "name": "Add Cover Note",
+      "extends": ["Apply for Internship"]
+    },
+    {
+      "name": "View All Applications & Positions"
+    }
+  ],
+  "includes": [
+    { "from": "Apply for Internship", "to": "Browse Open Positions" },
+    { "from": "Match Applications", "to": "View All Applications & Positions" }
+  ],
+  "extends": [
+    { "from": "Add Cover Note", "to": "Apply for Internship" }
+  ]
+}

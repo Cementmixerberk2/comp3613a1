@@ -1,0 +1,340 @@
+{% extends "authenticated-base.html" %}
+{% block title %}InternMatch | Student{% endblock %}
+
+{% block content %}
+<div class="company-shell">
+  <nav class="company-topbar">
+    <div class="company-brand">InternMatch</div>
+    <div class="company-tabs">
+      <a class="company-tab {{ 'active' if selected_tab == 'browse' else '' }}" href="{{ request.url_for('student_home_view') }}?tab=browse">Browse Positions</a>
+      <a class="company-tab {{ 'active' if selected_tab == 'applications' else '' }}" href="{{ request.url_for('student_home_view') }}?tab=applications">My Applications</a>
+    </div>
+    <a class="company-logout" href="{{ url_for('logout') }}">Logout</a>
+  </nav>
+
+  <div class="company-content">
+    <div class="student-page-shell">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.type }} mt-3" role="alert">{{ message.message }}</div>
+      {% endfor %}
+      {% for message in get_flashed_messages(request) %}
+      <div class="alert alert-{{ message.type }} mt-3" role="alert">{{ message.message }}</div>
+      {% endfor %}
+
+      {% if selected_tab == 'applications' %}
+      <section class="section-card student-section-card" id="my-applications">
+        <div class="section-header">
+          <h2>My Applications</h2>
+        </div>
+
+        {% if applications %}
+        <div class="table-responsive">
+          <table class="table student-table">
+            <thead>
+              <tr>
+                <th>Position</th>
+                <th>Company</th>
+                <th>Cover Note</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in applications %}
+              <tr>
+                <td>{{ item.position.title if item.position else 'Position' }}</td>
+                <td>{{ item.company.name if item.company else 'Company' }}</td>
+                <td>{{ item.application.cover_note or 'No cover note provided.' }}</td>
+                <td><span class="status-pill {% if item.application.status == 'Matched' %}matched{% else %}submitted{% endif %}">{{ item.application.status }}</span></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="placeholder-text">You have not applied to any internships yet.</p>
+        {% endif %}
+      </section>
+      {% else %}
+      <div class="student-browse-layout">
+        <section class="section-card student-list-panel">
+          <div class="section-header">
+            <h2>Browse Positions</h2>
+          </div>
+
+          {% if open_positions %}
+          <div class="position-list">
+            {% for item in open_positions %}
+            <a class="position-card {% if selected_position and item.position.id == selected_position.id %}selected{% endif %}" href="{{ request.url_for('student_home_view') }}?tab=browse&position_id={{ item.position.id }}">
+              <div class="position-card-head">
+                <h3>{{ item.position.title }}</h3>
+              </div>
+              <div class="position-card-company">{{ item.company.name if item.company else 'Company' }}</div>
+              <div class="position-card-meta">Available slots: {{ item.position.available_slots }}</div>
+            </a>
+            {% endfor %}
+          </div>
+          {% else %}
+          <p class="placeholder-text">There are no open positions right now.</p>
+          {% endif %}
+        </section>
+
+        <section class="section-card student-detail-panel">
+          {% if selected_position %}
+          <div class="detail-panel-header">
+            <div>
+              <p class="eyebrow small-eyebrow">Selected position</p>
+              <h2>{{ selected_position.title }}</h2>
+            </div>
+            <span class="status-pill {% if selected_position_status and selected_position_status == 'Submitted' %}submitted{% elif selected_position_status == 'Matched' %}matched{% else %}available{% endif %}">
+              {% if selected_position_status %}{{ selected_position_status }}{% else %}Available{% endif %}
+            </span>
+          </div>
+
+          {% if selected_position_status and selected_position_status == 'Submitted' %}
+          <div class="alert alert-success compact-alert" role="alert">Application submitted</div>
+          {% endif %}
+
+          <div class="detail-company-line">{{ selected_company.name if selected_company else 'Company' }}</div>
+          <p class="detail-description">{{ selected_position.description }}</p>
+
+          {% if selected_position_status and selected_position_status in ['Submitted', 'Matched'] %}
+          <div class="status-box">
+            <span class="status-label">Status</span>
+            <span class="status-value">{{ selected_position_status }}</span>
+          </div>
+          {% else %}
+          <form method="POST" action="{{ url_for('apply_position_action', position_id=selected_position.id) }}" class="detail-form">
+            <label for="cover_note">Cover Note</label>
+            <textarea id="cover_note" name="cover_note" rows="4" placeholder="Briefly explain why you are a good fit..."></textarea>
+            <button class="primary-btn" type="submit">Apply</button>
+          </form>
+          {% endif %}
+          {% else %}
+          <p class="placeholder-text">Select a position to view details.</p>
+          {% endif %}
+        </section>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<style>
+  .student-page-shell {
+    padding: 1.5rem 0 0;
+  }
+
+  .student-page-shell {
+    width: 100%;
+    max-width: 100%;
+    padding-top: 0.25rem;
+  }
+
+  .student-browse-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);
+    gap: 1.25rem;
+    align-items: start;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .student-section-card,
+  .student-list-panel,
+  .student-detail-panel {
+    background: rgba(255, 255, 255, 0.82);
+    border: 1px solid rgba(16, 38, 61, 0.08);
+    border-radius: 1rem;
+    box-shadow: 0 12px 28px rgba(16, 38, 61, 0.05);
+    min-width: 0;
+  }
+
+  .student-list-panel, .student-detail-panel {
+    padding: 1.25rem;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .student-section-card {
+    padding: 1.25rem 1.25rem 0.5rem;
+  }
+
+  .position-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    margin-top: 1rem;
+  }
+
+  .position-card {
+    display: block;
+    background: #f7f8fa;
+    border: 1px solid rgba(16, 38, 61, 0.08);
+    border-radius: 0.9rem;
+    padding: 1rem 1rem 0.875rem;
+    color: var(--brand-ink);
+    text-decoration: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  }
+
+  .position-card:hover {
+    text-decoration: none;
+    color: var(--brand-ink);
+    border-color: rgba(212, 166, 74, 0.7);
+    box-shadow: 0 8px 20px rgba(16, 38, 61, 0.06);
+    transform: translateY(-1px);
+  }
+
+  .position-card.selected {
+    border-color: rgba(212, 166, 74, 0.9);
+    background: linear-gradient(180deg, rgba(212, 166, 74, 0.08), rgba(16, 38, 61, 0.02));
+    box-shadow: inset 0 0 0 1px rgba(212, 166, 74, 0.45);
+  }
+
+  .position-card-head h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+
+  .position-card-company {
+    margin-top: 0.75rem;
+    color: var(--brand-muted);
+    font-weight: 600;
+  }
+
+  .position-card-meta {
+    margin-top: 0.4rem;
+    color: var(--brand-primary);
+    font-weight: 700;
+    font-size: 0.92rem;
+  }
+
+  .detail-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .detail-panel-header h2 {
+    margin: 0;
+    font-size: 1.7rem;
+  }
+
+  .detail-company-line {
+    color: var(--brand-muted);
+    font-weight: 700;
+    margin-bottom: 1rem;
+  }
+
+  .detail-description {
+    margin: 0 0 1.25rem;
+    line-height: 1.7;
+    color: var(--brand-ink);
+  }
+
+  .detail-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .detail-form label {
+    font-weight: 600;
+    color: var(--brand-ink);
+  }
+
+  .detail-form textarea {
+    width: 100%;
+    min-width: 0;
+    resize: vertical;
+    min-height: 120px;
+    border: 1px solid rgba(16, 38, 61, 0.15);
+    border-radius: 0.75rem;
+    padding: 0.85rem 0.9rem;
+    background: #fff;
+  }
+
+  .compact-alert {
+    margin-bottom: 1rem;
+  }
+
+  .status-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    background: rgba(16, 38, 61, 0.03);
+    border: 1px solid rgba(16, 38, 61, 0.08);
+    border-radius: 0.8rem;
+    padding: 0.85rem 1rem;
+  }
+
+  .status-label {
+    color: var(--brand-muted);
+    font-weight: 700;
+  }
+
+  .status-value {
+    font-weight: 800;
+    color: var(--brand-primary);
+  }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 0.38rem 0.7rem;
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .status-pill.available {
+    background: rgba(16, 38, 61, 0.08);
+    color: var(--brand-primary);
+  }
+
+  .status-pill.submitted {
+    background: rgba(212, 166, 74, 0.14);
+    color: #7d5a18;
+  }
+
+  .status-pill.matched {
+    background: rgba(22, 104, 73, 0.12);
+    color: #0b6e4e;
+  }
+
+  .small-eyebrow {
+    margin-bottom: 0.3rem;
+    font-size: 0.7rem;
+  }
+
+  .student-table {
+    margin-top: 0.5rem;
+    background: #fff;
+    border-radius: 0.9rem;
+    overflow: hidden;
+  }
+
+  .student-table th {
+    background: rgba(16, 38, 61, 0.04);
+    color: var(--brand-ink);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .student-table td {
+    vertical-align: top;
+  }
+
+  @media (max-width: 900px) {
+    .student-browse-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}

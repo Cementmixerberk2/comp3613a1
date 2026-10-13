@@ -47,29 +47,32 @@ def cmd_init(args: argparse.Namespace) -> None:
 
 
 def cmd_seed(args: argparse.Namespace) -> None:
-    """Insert demo users.
-
-    bob / bobpass       (regular_user)
-    admin / adminpass   (admin)
-    """
+    """Insert the clean internship seed dataset for a fresh local app state."""
     from app.database import ensure_db_and_tables, get_cli_session
+    from app.repositories.internship import (
+        ApplicationRepository,
+        CompanyRepository,
+        PositionRepository,
+        StudentRepository,
+    )
     from app.repositories.user import UserRepository
     from app.schemas.user import AdminCreate, RegularUserCreate
+    from app.seed_data import SEED_APPLICATIONS, SEED_POSITIONS, SEED_STUDENTS, SEED_USERS
     from app.utilities.security import encrypt_password
 
     _ensure_models_loaded()
     ensure_db_and_tables()
 
-    demo_users = [
-        ("bob", "bob@example.com", "bobpass", "regular_user"),
-        ("admin", "admin@example.com", "adminpass", "admin"),
-    ]
-
     created = 0
     skipped = 0
     with get_cli_session() as session:
         repo = UserRepository(session)
-        for username, email, password, role in demo_users:
+        company_repo = CompanyRepository(session)
+        position_repo = PositionRepository(session)
+        student_repo = StudentRepository(session)
+        application_repo = ApplicationRepository(session)
+
+        for username, email, password, role in SEED_USERS:
             if repo.get_by_username(username):
                 print(f"  skip  {username} (already exists)")
                 skipped += 1
@@ -86,8 +89,62 @@ def cmd_seed(args: argparse.Namespace) -> None:
             print(f"  create {username} ({role})")
             created += 1
 
-    print(f"Seed done — created {created}, skipped {skipped}.")
-    print("Login with bob/bobpass or admin/adminpass")
+        company_user = repo.get_by_username("northwind")
+        if company_user is None:
+            raise RuntimeError("Seed company user was not created.")
+        company = company_repo.get_by_user(company_user.id)
+        if company is None:
+            company = company_repo.ensure_for_user(company_user.id, "Northwind Studio", "hello@northwindstudio.com")
+        elif company.name != "Northwind Studio":
+            company.name = "Northwind Studio"
+            session.add(company)
+            session.commit()
+
+        position_map = {}
+        for title, description, slots in SEED_POSITIONS:
+            existing = next((position for position in position_repo.list_by_company(company.id) if position.title == title), None)
+            if existing is None:
+                existing = position_repo.create(company.id, title, description, slots)
+                print(f"  seed position {title} ({slots} slots)")
+            position_map[title] = existing
+
+        for username, profile in SEED_STUDENTS.items():
+            user = repo.get_by_username(username)
+            if user is None:
+                continue
+            student = student_repo.get_by_user(user.id)
+            if student is None:
+                student = student_repo.ensure_for_user(user.id, profile["full_name"], profile["major"], profile["gpa"])
+            else:
+                student.full_name = profile["full_name"]
+                student.major = profile["major"]
+                student.gpa = profile["gpa"]
+                session.add(student)
+            session.commit()
+
+        for title, description, slots in SEED_POSITIONS:
+            position = position_map.get(title)
+            if position is not None:
+                position.available_slots = slots
+                session.add(position)
+        session.commit()
+
+        for username, title, cover_note in SEED_APPLICATIONS:
+            user = repo.get_by_username(username)
+            if user is None:
+                continue
+            student = student_repo.get_by_user(user.id)
+            if student is None:
+                continue
+            position = position_map.get(title)
+            if position is None:
+                continue
+            if application_repo.get_by_student_and_position(student.id, position.id) is None:
+                application_repo.create(student.id, position.id, cover_note)
+                print(f"  seed application {username} -> {title}")
+
+        print(f"Seed done — created {created}, skipped {skipped}.")
+        print("Login with admin/adminpass")
 
 
 def cmd_run(args: argparse.Namespace) -> None:

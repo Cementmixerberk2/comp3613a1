@@ -35,6 +35,19 @@ app.mount("/static", static_files, name="static")
 
 
 @app.middleware("http")
+async def flash_cookie_middleware(request: Request, call_next):
+    response = await call_next(request)
+    pending = getattr(request.state, "_flash_messages", None)
+    if pending is not None:
+        import json
+
+        response.set_cookie(key="_flash_messages", value=json.dumps(pending), path="/", httponly=True, samesite="lax")
+    if getattr(request.state, "_flash_messages_to_clear", False):
+        response.delete_cookie(key="_flash_messages", path="/")
+    return response
+
+
+@app.middleware("http")
 async def recover_uninitialized_db(request: Request, call_next):
     """If a request hits a missing schema, create tables once and retry."""
     from app.database import recover_if_uninitialized

@@ -33,7 +33,7 @@
     #sidebar .nav-link:hover,
     #sidebar .nav-link.active {
         color: #fff;
-        background-color: color-mix(in srgb, var(--brand-accent) 55%, #000);
+        background-color: var(--brand-primary);
         border-radius: 0.5rem;
     }
 
@@ -56,23 +56,147 @@
     .navbar {
         border-bottom: 1px solid #dee2e6;
     }
+
+    .company-shell {
+        min-height: 100vh;
+        background: linear-gradient(180deg, #f8f6f2 0%, #f1efe9 100%);
+        padding: 1.5rem;
+    }
+
+    .company-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        background: #ffffff;
+        border: 1px solid rgba(16, 38, 61, 0.08);
+        border-radius: 1rem;
+        padding: 0.9rem 1.1rem;
+        box-shadow: 0 10px 24px rgba(16, 38, 61, 0.06);
+        margin-bottom: 1.25rem;
+    }
+
+    .company-brand {
+        font-weight: 800;
+        color: var(--brand-ink);
+        letter-spacing: -0.03em;
+        font-size: 1.25rem;
+    }
+
+    .company-tabs {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .company-tab {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.62rem 1rem;
+        border-radius: 999px;
+        background: rgba(16, 38, 61, 0.04);
+        color: var(--brand-ink);
+        text-decoration: none;
+        font-weight: 600;
+        position: relative;
+        border-bottom: 2px solid transparent;
+    }
+
+    .company-tab.active {
+        background: var(--brand-primary);
+        color: #fff;
+        border-bottom-color: var(--brand-accent);
+        box-shadow: inset 0 -2px 0 var(--brand-accent);
+    }
+
+    .company-tab.active::after {
+        content: "";
+        position: absolute;
+        left: 16px;
+        right: 16px;
+        bottom: -6px;
+        height: 2px;
+        background: var(--brand-accent);
+        border-radius: 999px;
+    }
+
+    .company-logout {
+        color: var(--brand-ink);
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .company-content {
+        background: transparent;
+    }
+
+    .company-shell .section-header h2 {
+        border-bottom: 2px solid rgba(212, 166, 74, 0.6);
+        padding-bottom: 0.45rem;
+    }
 </style>
 {% block additional_styles %}{% endblock %}
 {% endblock %}
 
 {% block content %}
+{% if request.url.path.startswith('/company') %}
+<div class="company-shell">
+    <nav class="company-topbar">
+        <div class="company-brand">InternMatch</div>
+        <div class="company-tabs">
+            <a class="company-tab {{ 'active' if (request.query_params.get('tab', 'post') == 'post') else '' }}" href="{{ request.url_for('company_home_view') }}?tab=post">Post Position</a>
+            <a class="company-tab {{ 'active' if (request.query_params.get('tab', 'post') == 'interns') else '' }}" href="{{ request.url_for('company_home_view') }}?tab=interns">Assigned Interns</a>
+        </div>
+        <a class="company-logout" href="{{ url_for('logout') }}">Logout</a>
+    </nav>
+</div>
+{% elif request.url.path.startswith('/student') %}
+<div class="company-shell">
+    <nav class="company-topbar">
+        <div class="company-brand">InternMatch</div>
+        <div class="company-tabs">
+            <a class="company-tab {{ 'active' if selected_tab == 'browse' else '' }}" href="{{ request.url_for('student_home_view') }}?tab=browse">Browse Positions</a>
+            <a class="company-tab {{ 'active' if selected_tab == 'applications' else '' }}" href="{{ request.url_for('student_home_view') }}?tab=applications">My Applications</a>
+        </div>
+        <a class="company-logout" href="{{ url_for('logout') }}">Logout</a>
+    </nav>
+</div>
+{% else %}
 <div id="wrapper">
     <nav id="sidebar" class="p-3 d-flex flex-column vh-100">
-        <div class="brand-wordmark">FastStarter</div>
+        <div class="brand-wordmark">InternMatch</div>
 
         <ul class="nav nav-pills flex-column gap-2 flex-grow-1">
+            {% if user.role == 'company' %}
             <li class="nav-item">
-                <a class="nav-link d-flex align-items-center {{ 'active' if request.url.path.startswith('/app') }}"
-                   href="{{ url_for('user_home_view') }}">
+                <a class="nav-link d-flex align-items-center {{ 'active' if request.url.path.startswith('/company') }}" href="{{ url_for('company_home_view') }}">
+                    <span class="material-symbols-outlined me-2">work</span>
+                    Company
+                </a>
+            </li>
+            {% elif user.role == 'student' %}
+            <li class="nav-item">
+                <a class="nav-link d-flex align-items-center {{ 'active' if request.url.path.startswith('/student') }}" href="{{ url_for('student_home_view') }}">
+                    <span class="material-symbols-outlined me-2">school</span>
+                    Student
+                </a>
+            </li>
+            {% else %}
+            <li class="nav-item">
+                <a class="nav-link d-flex align-items-center {{ 'active' if request.url.path.startswith('/app') }}" href="{{ url_for('user_home_view') }}">
                     <span class="material-symbols-outlined me-2">home</span>
                     Home
                 </a>
             </li>
+            {% endif %}
+            {% if user.role == 'admin' %}
+            <li class="nav-item">
+                <a class="nav-link d-flex align-items-center {{ 'active' if request.url.path.startswith('/admin') }}" href="{{ url_for('admin_home_view') }}">
+                    <span class="material-symbols-outlined me-2">admin_panel_settings</span>
+                    Admin
+                </a>
+            </li>
+            {% endif %}
             <li class="nav-item mt-auto">
                 <a class="nav-link d-flex align-items-center text-danger" href="{{ url_for('logout') }}">
                     <span class="material-symbols-outlined me-2">logout</span>
@@ -92,14 +216,6 @@
             </div>
         </nav>
 
-        <div class="row">
-            <div class="col-12">
-                {% for message in get_flashed_messages(request) %}
-                <div class="alert alert-{{ message.type }}" role="alert">{{ message.message }}</div>
-                {% endfor %}
-            </div>
-        </div>
-
         {% block subpage_content %}{% endblock %}
     </div>
 </div>
@@ -109,5 +225,6 @@
         document.getElementById("sidebar").classList.toggle("collapsed");
     });
 </script>
+{% endif %}
 {% block subpage_scripts %}{% endblock %}
 {% endblock %}

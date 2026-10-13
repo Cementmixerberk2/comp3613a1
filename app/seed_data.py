@@ -1,7 +1,9 @@
 SEED_USERS = [
     ("admin", "admin@northwindstudio.com", "adminpass", "admin"),
     ("northwind", "hello@northwindstudio.com", "companypass", "company"),
+    ("company1", "company1@northwindstudio.com", "companypass", "company"),
     ("ava_thompson", "ava.thompson@example.com", "studentpass", "student"),
+    ("student1", "student1@example.com", "studentpass", "student"),
     ("leo_martinez", "leo.martinez@example.com", "studentpass", "student"),
     ("mia_ross", "mia.ross@example.com", "studentpass", "student"),
     ("noah_chen", "noah.chen@example.com", "studentpass", "student"),
@@ -10,6 +12,7 @@ SEED_USERS = [
 
 SEED_STUDENTS = {
     "ava_thompson": {"full_name": "Ava Thompson", "major": "Computer Science", "gpa": 3.91},
+    "student1": {"full_name": "Student One", "major": "Undecided", "gpa": 0.00},
     "leo_martinez": {"full_name": "Leo Martinez", "major": "Software Engineering", "gpa": 3.76},
     "mia_ross": {"full_name": "Mia Ross", "major": "Business Analytics", "gpa": 3.83},
     "noah_chen": {"full_name": "Noah Chen", "major": "Data Science", "gpa": 3.69},

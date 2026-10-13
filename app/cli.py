@@ -89,16 +89,30 @@ def cmd_seed(args: argparse.Namespace) -> None:
             print(f"  create {username} ({role})")
             created += 1
 
-        company_user = repo.get_by_username("northwind")
-        if company_user is None:
-            raise RuntimeError("Seed company user was not created.")
-        company = company_repo.get_by_user(company_user.id)
+        seed_companies = {
+            "northwind": ("Northwind Studio", "hello@northwindstudio.com"),
+            "company1": ("Company 1", "company1@northwindstudio.com"),
+        }
+
+        company = None
+        for company_username, (company_name, contact_email) in seed_companies.items():
+            company_user = repo.get_by_username(company_username)
+            if company_user is None:
+                raise RuntimeError(f"Seed company user {company_username} was not created.")
+            candidate = company_repo.get_by_user(company_user.id)
+            if candidate is None:
+                candidate = company_repo.ensure_for_user(company_user.id, company_name, contact_email)
+            elif candidate.name != company_name or candidate.contact_email != contact_email:
+                candidate.name = company_name
+                candidate.contact_email = contact_email
+                session.add(candidate)
+                session.commit()
+
+            if company_username == "northwind":
+                company = candidate
+
         if company is None:
-            company = company_repo.ensure_for_user(company_user.id, "Northwind Studio", "hello@northwindstudio.com")
-        elif company.name != "Northwind Studio":
-            company.name = "Northwind Studio"
-            session.add(company)
-            session.commit()
+            raise RuntimeError("Primary seed company profile was not created.")
 
         position_map = {}
         for title, description, slots in SEED_POSITIONS:

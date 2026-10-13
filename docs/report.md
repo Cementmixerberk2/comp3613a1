@@ -224,9 +224,15 @@ The MVP was implemented in workflow slices and verified after each milestone, wi
 
 ## Deployed app
 
-Phase 6 deployment is intentionally left blank for this submission. The work was verified locally and the app was checked on localhost ports during implementation, but no public Render deployment was created in this phase.
+Phase 6 deployment was completed with the Render MCP.
 
-https://
+- Database wiring: the `faststarter` web service now uses the Render internal Postgres connection (`DATABASE_URI`) for `internmatch-db` in Oregon, so credentials are kept only in Render environment variables.
+- Postgres verification: querying `internmatch-db` after redeploy showed app tables present (`user`, `student`, `company`, `position`, `application`) and `7` seeded users.
+
+- Public health check: `https://faststarter-dc37.onrender.com/health` returned `{"ok":true}`.
+- Seed verification on deployed app: posting `admin/adminpass` to `/login` returned `303` redirect to `/admin`, confirming seeded accounts are present and the app is not empty.
+
+Public URL: https://faststarter-dc37.onrender.com
 
 ## Logins
 
@@ -234,7 +240,9 @@ These are the seeded accounts used for verification and demo use:
 
 - admin / adminpass — admin
 - northwind / companypass — company
+- company1 / companypass — company
 - ava_thompson / studentpass — student
+- student1 / studentpass — student
 - leo_martinez / studentpass — student
 - mia_ross / studentpass — student
 - noah_chen / studentpass — student

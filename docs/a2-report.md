@@ -127,7 +127,7 @@ Before testing, reset and seed the database with `python manage.py init`, then s
 <tr><td>1.8 Test View My Applications</td><td>☐ Must be logged in as a Student<br>☐ Student has submitted at least one application</td><td>☐ Click on <b>My Applications</b> in the navbar (W3)</td><td>☐ "UAT Test Intern" is listed<br>☐ The row shows company Northwind Studio, the cover note and status Submitted</td><td class="pf"></td><td class="pf"></td></tr>
 <tr><td>1.9 Test View Applicants</td><td>☐ Must be logged in as an Admin<br>☐ student1 has applied to "UAT Test Intern"</td><td>☐ On the <b>Matching Workspace</b> page (W4) click "UAT Test Intern" under Open Positions</td><td>☐ Student One's application is shown with major, GPA and cover note<br>☐ Remaining slots shows 2 / 2<br>☐ An <b>Assign student</b> button is shown</td><td class="pf"></td><td class="pf"></td></tr>
 <tr><td>1.10 Test Match Application</td><td>☐ Must be logged in as an Admin<br>☐ Student One's application to "UAT Test Intern" is pending</td><td>☐ On <b>Matching Workspace</b> (W4) select "UAT Test Intern"<br>☐ Press <b>Assign student</b> on Student One's application</td><td>☐ User is alerted "Application matched successfully."<br>☐ The application status changes to Matched<br>☐ Remaining slots changes to 1 / 2</td><td class="pf"></td><td class="pf"></td></tr>
-<tr><td>1.11 Test Already Matched Student</td><td>☐ Must be logged in as an Admin<br>☐ Student One was matched in 1.10<br>☐ Student One applied to "Marketing Intern" in 1.6</td><td>☐ On <b>Matching Workspace</b> (W4) click "Marketing Intern" under Open Positions</td><td>☐ Student One's application shows "Already matched"<br>☐ Its button is disabled and cannot be pressed<br>☐ Other applicants still show <b>Assign student</b></td><td class="pf"></td><td class="pf"></td></tr>
+<tr><td>1.11 Test Already Matched Student</td><td>☐ Must be logged in as an Admin<br>☐ Student One was matched in 1.10<br>☐ Student One applied to "Marketing Intern" in 1.6<br>☐ Seeded applicants Mia Ross, Noah Chen and Sophia Nguyen have also applied to "Marketing Intern"</td><td>☐ On <b>Matching Workspace</b> (W4) click "Marketing Intern" under Open Positions</td><td>☐ Student One's application shows "Already matched"<br>☐ Its button is disabled and cannot be pressed<br>☐ Other applicants still show <b>Assign student</b></td><td class="pf"></td><td class="pf"></td></tr>
 <tr><td>1.12 Test Matched Status for Student</td><td>☐ Must be logged in as a Student<br>☐ Student's application was matched in 1.10</td><td>☐ Click on <b>My Applications</b> in the navbar (W3)</td><td>☐ "UAT Test Intern" shows status Matched<br>☐ The student's other application still shows Submitted</td><td class="pf"></td><td class="pf"></td></tr>
 <tr><td>1.13 Test View Assigned Interns</td><td>☐ Must be logged in as a Company<br>☐ A student has been matched to one of its positions</td><td>☐ Click on <b>Assigned Interns</b> in the navbar (W5)</td><td>☐ Student One is listed under "UAT Test Intern"<br>☐ The position shows 1 / 2 filled<br>☐ Positions with no matches show "No interns assigned."</td><td class="pf"></td><td class="pf"></td></tr>
 <tr><td>1.14 Test Role Access Restriction</td><td>☐ Must be logged in as a Student</td><td>☐ Enter http://localhost:5000/admin in the address bar<br>☐ Enter http://localhost:5000/company in the address bar</td><td>☐ The admin page does not open; a 401 Unauthorized page is shown<br>☐ The company page does not open; "Company access required" is shown</td><td class="pf"></td><td class="pf"></td></tr>
@@ -354,63 +354,21 @@ All endpoints are under `/api`. Endpoints marked with a role require `Authorizat
 
 ## Unit Test Implementation
 
-Unit tests are in `tests/unit/` (`test_security.py`, `test_auth_service.py`, `test_internship_service.py`, `test_repositories.py`) and run with `python manage.py test unit`. Example from `test_internship_service.py`:
+Unit tests are in `tests/unit/` (`test_security.py`, `test_auth_service.py`, `test_internship_service.py`, `test_repositories.py`) and run with `python manage.py test unit`. Screenshot of `tests/unit/test_internship_service.py`:
 
-```python
-@pytest.fixture
-def service():
-    svc = InternshipService(MagicMock())
-    svc.company_repo = MagicMock()
-    svc.student_repo = MagicMock()
-    svc.position_repo = MagicMock()
-    svc.application_repo = MagicMock()
-    return svc
-
-
-def test_submit_application_rejects_duplicate(student_ready):
-    student_ready.application_repo.get_by_student_and_position.return_value = Application(id=1, student_id=4, position_id=10)
-    with pytest.raises(ConflictError, match="already applied"):
-        student_ready.submit_application(_user("student"), 10, "")
-
-
-def test_match_application_requires_admin(match_ready):
-    with pytest.raises(PermissionDeniedError):
-        match_ready.match_application(_user("company"), 1)
-    match_ready.application_repo.match.assert_not_called()
-```
+![Unit test implementation](screenshots/unit-test-code.jpg)
 
 ## Integration Tests Implementation
 
-Integration tests are in `tests/integration/` (`test_api_auth.py`, `test_api_positions.py`, `test_api_applications.py`, `test_web_workflows.py`, `test_company_dashboard_view.py`) and run with `python manage.py test integration`. Example from `test_api_applications.py`:
+Integration tests are in `tests/integration/` (`test_api_auth.py`, `test_api_positions.py`, `test_api_applications.py`, `test_web_workflows.py`, `test_company_dashboard_view.py`) and run with `python manage.py test integration`. Screenshot of `tests/integration/test_api_applications.py`:
 
-```python
-def test_admin_match_sets_status_and_reduces_slots(client, world):
-    app_id = _apply(client, login(client, "alice"), world["software"].id).json()["id"]
-    admin = login(client, "admin")
-    response = client.patch(f"/api/applications/{app_id}", json={"status": "Matched"}, headers=admin)
-    assert response.status_code == 200
-    assert response.json()["status"] == "Matched"
-    assert response.json()["position"]["available_slots"] == 1
-
-    # The student sees the new status.
-    mine = client.get("/api/students/me/applications", headers=login(client, "alice")).json()
-    assert mine[0]["status"] == "Matched"
-```
+![Integration test implementation](screenshots/integration-test-code.jpg)
 
 ## API Tests Implementation
 
-API tests are implemented with Postman test scripts in the collection `postman/internship-platform.postman_collection.json` (31 requests, 49 tests), on the Tests tab of each request. Example from the "Match application (admin)" request:
+API tests are implemented with Postman test scripts in the collection `postman/internship-platform.postman_collection.json` (31 requests, 49 tests), on the Scripts (After response) tab of each request. Screenshot of the "Match application (admin)" request in Postman:
 
-```javascript
-pm.test("Status code is 200", function () {
-    pm.response.to.have.status(200);
-});
-pm.test("Status is Matched and one slot is used", function () {
-    const body = pm.response.json();
-    pm.expect(body.status).to.eql("Matched");
-    pm.expect(body.position.available_slots).to.eql(1);
-});
-```
+![API test implementation in Postman](screenshots/postman-test-script.jpg)
 
 To run them: `python manage.py init`, then `python manage.py run`, then import the collection into Postman and run it with the Collection Runner. Each run registers a new student and posts a new position, so the collection can be run again without resetting the database.
 
@@ -457,7 +415,7 @@ Command: `python manage.py test integration -v` (43 passed)
 <tr><td>1.8 Test View My Applications</td><td>☑ Must be logged in as a Student<br>☑ Student has submitted at least one application</td><td>☑ Click on <b>My Applications</b> in the navbar (W3)</td><td>☑ "UAT Test Intern" is listed<br>☑ The row shows company Northwind Studio, the cover note and status Submitted</td><td class="pf">✓</td><td class="pf"></td></tr>
 <tr><td>1.9 Test View Applicants</td><td>☑ Must be logged in as an Admin<br>☑ student1 has applied to "UAT Test Intern"</td><td>☑ On the <b>Matching Workspace</b> page (W4) click "UAT Test Intern" under Open Positions</td><td>☑ Student One's application is shown with major, GPA and cover note<br>☑ Remaining slots shows 2 / 2<br>☑ An <b>Assign student</b> button is shown</td><td class="pf">✓</td><td class="pf"></td></tr>
 <tr><td>1.10 Test Match Application</td><td>☑ Must be logged in as an Admin<br>☑ Student One's application to "UAT Test Intern" is pending</td><td>☑ On <b>Matching Workspace</b> (W4) select "UAT Test Intern"<br>☑ Press <b>Assign student</b> on Student One's application</td><td>☑ User is alerted "Application matched successfully."<br>☑ The application status changes to Matched<br>☑ Remaining slots changes to 1 / 2</td><td class="pf">✓</td><td class="pf"></td></tr>
-<tr><td>1.11 Test Already Matched Student</td><td>☑ Must be logged in as an Admin<br>☑ Student One was matched in 1.10<br>☑ Student One applied to "Marketing Intern" in 1.6</td><td>☑ On <b>Matching Workspace</b> (W4) click "Marketing Intern" under Open Positions</td><td>☑ Student One's application shows "Already matched"<br>☑ Its button is disabled and cannot be pressed<br>☑ Other applicants still show <b>Assign student</b></td><td class="pf">✓</td><td class="pf"></td></tr>
+<tr><td>1.11 Test Already Matched Student</td><td>☑ Must be logged in as an Admin<br>☑ Student One was matched in 1.10<br>☑ Student One applied to "Marketing Intern" in 1.6<br>☑ Seeded applicants Mia Ross, Noah Chen and Sophia Nguyen have also applied to "Marketing Intern"</td><td>☑ On <b>Matching Workspace</b> (W4) click "Marketing Intern" under Open Positions</td><td>☑ Student One's application shows "Already matched"<br>☑ Its button is disabled and cannot be pressed<br>☑ Other applicants still show <b>Assign student</b></td><td class="pf">✓</td><td class="pf"></td></tr>
 <tr><td>1.12 Test Matched Status for Student</td><td>☑ Must be logged in as a Student<br>☑ Student's application was matched in 1.10</td><td>☑ Click on <b>My Applications</b> in the navbar (W3)</td><td>☑ "UAT Test Intern" shows status Matched<br>☑ The student's other application still shows Submitted</td><td class="pf">✓</td><td class="pf"></td></tr>
 <tr><td>1.13 Test View Assigned Interns</td><td>☑ Must be logged in as a Company<br>☑ A student has been matched to one of its positions</td><td>☑ Click on <b>Assigned Interns</b> in the navbar (W5)</td><td>☑ Student One is listed under "UAT Test Intern"<br>☑ The position shows 1 / 2 filled<br>☑ Positions with no matches show "No interns assigned."</td><td class="pf">✓</td><td class="pf"></td></tr>
 <tr><td>1.14 Test Role Access Restriction</td><td>☑ Must be logged in as a Student</td><td>☑ Enter http://localhost:5000/admin in the address bar<br>☑ Enter http://localhost:5000/company in the address bar</td><td>☑ The admin page does not open; a 401 Unauthorized page is shown<br>☑ The company page does not open; "Company access required" is shown</td><td class="pf">✓</td><td class="pf"></td></tr>

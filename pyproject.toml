@@ -16,6 +16,14 @@ dependencies = []
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+testpaths = ["tests"]
+filterwarnings = [
+    "ignore:Using `httpx` with `starlette.testclient` is deprecated",
+]
+markers = [
+    "unit: tests that check one module in isolation (tests/unit)",
+    "integration: tests that run requests through the full app (tests/integration)",
+]
 
 [tool.setuptools]
 packages = ["app"]

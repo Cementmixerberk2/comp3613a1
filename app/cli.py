@@ -283,6 +283,35 @@ def cmd_users(args: argparse.Namespace) -> None:
             )
 
 
+def cmd_test(args: argparse.Namespace) -> None:
+    """Run the pytest suite: all tests, or only the unit or integration tests."""
+    import os
+    import subprocess
+    import sys
+
+    import pytest
+
+    targets = {
+        "all": ["tests"],
+        "unit": ["tests/unit"],
+        "integration": ["tests/integration"],
+    }[args.suite]
+
+    # Size the output to the longest test line so the result list and the
+    # summary line are the same width, whatever the size of the terminal.
+    collected = subprocess.run(
+        [sys.executable, "-m", "pytest", "--collect-only", "-q", *targets],
+        capture_output=True,
+        text=True,
+    ).stdout.splitlines()
+    test_ids = [line for line in collected if "::" in line]
+    if test_ids:
+        os.environ["COLUMNS"] = str(max(len(t) for t in test_ids) + len(" PASSED"))
+
+    extra = ["-v", "-o", "console_output_style=classic"] if args.verbose else []
+    raise SystemExit(pytest.main([*targets, *extra]))
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="python manage.py",
@@ -313,6 +342,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Insert demo users only (idempotent; also runs as part of init)",
     )
     p_seed.set_defaults(func=cmd_seed)
+
+    p_test = sub.add_parser("test", help="Run the unit and/or integration tests")
+    p_test.add_argument(
+        "suite",
+        nargs="?",
+        default="all",
+        choices=["all", "unit", "integration"],
+        help="Which tests to run (default: all)",
+    )
+    p_test.add_argument("-v", "--verbose", action="store_true", help="List each test")
+    p_test.set_defaults(func=cmd_test)
 
     p_run = sub.add_parser("run", help="Start the web app (uvicorn)")
     p_run.add_argument("--host", default=None, help="Bind host")

@@ -13,12 +13,17 @@ class AuthService:
     def __init__(self, user_repo: UserRepository):
         self.user_repo = user_repo
 
+    @staticmethod
+    def resolve_alias(user_repo: UserRepository, username: str):
+        alias_target = LOGIN_ALIASES.get((username or "").lower())
+        if alias_target:
+            return user_repo.get_by_username(alias_target)
+        return None
+
     def authenticate_user(self, username: str, password: str) -> Optional[str]:
         user = self.user_repo.get_by_username(username)
         if user is None:
-            alias_target = LOGIN_ALIASES.get(username.lower())
-            if alias_target:
-                user = self.user_repo.get_by_username(alias_target)
+            user = self.resolve_alias(self.user_repo, username)
         if not user or not verify_password(plaintext_password=password, encrypted_password=user.password):
             return None
         access_token = create_access_token(data={"sub": f"{user.id}", "role": user.role})

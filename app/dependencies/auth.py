@@ -14,6 +14,9 @@ async def get_current_user(request:Request, db:SessionDep)->User:
         headers={"WWW-Authenticate": "Bearer"},
     )
     token = request.cookies.get("access_token")
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.lower().startswith("bearer "):
+        token = auth_header[7:].strip() or token
 
     if token is None:
         raise credentials_exception
@@ -53,3 +56,22 @@ async def is_admin_dep(user: AuthDep):
     return user
 
 AdminDep = Annotated[User, Depends(is_admin_dep)]
+
+
+def require_roles(*roles: str):
+    """API dependency: the user must be logged in and hold one of ``roles``."""
+
+    async def checker(user: AuthDep) -> User:
+        if user.role not in roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to perform this action",
+            )
+        return user
+
+    return checker
+
+
+ApiAdminDep = Annotated[User, Depends(require_roles("admin"))]
+ApiCompanyDep = Annotated[User, Depends(require_roles("company"))]
+ApiStudentDep = Annotated[User, Depends(require_roles("student", "regular_user"))]

@@ -4,6 +4,12 @@ from sqlmodel import Session, select
 
 from app.models.internship import Position
 from app.models.user import User
+from app.services.errors import (
+    ConflictError,
+    InvalidInputError,
+    NotFoundError,
+    PermissionDeniedError,
+)
 from app.repositories.internship import (
     ApplicationRepository,
     CompanyRepository,
@@ -33,9 +39,9 @@ class InternshipService:
         cleaned_title = (title or "").strip()
         cleaned_description = (description or "").strip()
         if not cleaned_title:
-            raise ValueError("Title cannot be blank. Please enter a position title.")
+            raise InvalidInputError("Title cannot be blank. Please enter a position title.")
         if not cleaned_description:
-            raise ValueError("Description cannot be blank. Please add a short description.")
+            raise InvalidInputError("Description cannot be blank. Please add a short description.")
 
         company = self.company_repo.get_by_user(user.id)
         if company is None:
@@ -68,19 +74,19 @@ class InternshipService:
 
     def submit_application(self, user: User, position_id: int, cover_note: str):
         if user.role not in {"student", "regular_user"}:
-            raise ValueError("Only a student account can apply.")
+            raise PermissionDeniedError("Only a student account can apply.")
         student = self.student_repo.get_by_user(user.id)
         if student is None:
             student = self.student_repo.ensure_for_user(user.id, user.username.title(), "Undecided", 0.0)
         position = self.position_repo.get_by_id(position_id)
         if position is None:
-            raise ValueError("Position not found.")
+            raise NotFoundError("Position not found.")
         if position.available_slots <= 0:
-            raise ValueError("This position is no longer open.")
+            raise ConflictError("This position is no longer open.")
         if self.application_repo.get_by_student_and_position(student.id, position.id) is not None:
-            raise ValueError("You have already applied for this position.")
+            raise ConflictError("You have already applied for this position.")
         if self.application_repo.student_has_matched_application(student.id):
-            raise ValueError("This student is already matched to another internship.")
+            raise ConflictError("This student is already matched to another internship.")
         return self.application_repo.create(student.id, position.id, cover_note)
 
     def list_student_applications(self, user: User):
@@ -97,12 +103,19 @@ class InternshipService:
 
     def match_application(self, user: User, application_id: int):
         if user.role != "admin":
-            raise ValueError("Only admins can match applicants.")
+            raise PermissionDeniedError("Only admins can match applicants.")
         app = self.application_repo.get_by_id(application_id)
         if app is None:
-            raise ValueError("Application not found.")
+            raise NotFoundError("Application not found.")
+        if app.status == "Matched":
+            raise ConflictError("This application is already matched.")
         if self.application_repo.student_has_matched_application(app.student_id):
-            raise ValueError("The student is already matched to another position.")
+            raise ConflictError("The student is already matched to another position.")
+        position = self.position_repo.get_by_id(app.position_id)
+        if position is None:
+            raise NotFoundError("Position not found.")
+        if position.available_slots <= 0:
+            raise ConflictError("This position has no remaining slots.")
         return self.application_repo.match(application_id)
 
     def admin_dashboard(self):

@@ -1,7 +1,7 @@
 import asyncio
 
-from starlette.requests import Request
 from sqlmodel import Session, SQLModel, create_engine
+from starlette.requests import Request
 
 from app.main import app
 from app.models.internship import Application, Company, Position, Student
@@ -92,10 +92,15 @@ def test_new_student_profile_defaults_to_undecided_major_and_zero_gpa():
 
 
 def test_seed_catalog_uses_clean_internship_dataset():
-    from app.seed_data import SEED_APPLICATIONS, SEED_POSITIONS, SEED_STUDENTS, SEED_USERS
+    from app.seed_data import (
+        SEED_APPLICATIONS,
+        SEED_POSITIONS,
+        SEED_STUDENTS,
+        SEED_USERS,
+    )
 
-    assert len(SEED_USERS) == 7
-    assert sum(1 for username, _, _, role in SEED_USERS if role == "student") == 5
+    assert len(SEED_USERS) == 9
+    assert sum(1 for username, _, _, role in SEED_USERS if role == "student") == 6
     assert any(username == "admin" for username, _, _, _ in SEED_USERS)
     assert any(username == "northwind" for username, _, _, _ in SEED_USERS)
     assert any(position[2] == 1 for position in SEED_POSITIONS)
